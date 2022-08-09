@@ -28,7 +28,7 @@ pub contract MetaForestTree : NonFungibleToken {
         pub let templateId: UInt64
         pub var maxSupply: UInt64
         pub var issuedSupply: UInt64
-        access(contract)  var baseUri: String
+        access(contract) var baseUri: String
         access(contract) var tokenUri: String
 
         init(maxSupply: UInt64, baseUri: String, tokenUri: String) {
@@ -188,20 +188,16 @@ pub contract MetaForestTree : NonFungibleToken {
         var newNFT: @NFT <- create NFT(templateId: templateId, mintNumber: MetaForestTree.allTemplates[templateId]!.incrementIssuedSupply())
         recipientCollection.deposit(token: <-newNFT)
     }
-     
     //method to create empty Collection
     pub fun createEmptyCollection(): @NonFungibleToken.Collection {
         return <- create MetaForestTree.Collection()
     }
-    
     access(account) fun updateBaseUri(templateId: UInt64,baseUri: String){
         pre {
             baseUri.length > 0 : "plese provide new uri"
         }
         self.allTemplates[templateId]!.setBaseUri(baseUri: baseUri)
     }
-
-     
     access(account) fun updateTokenUri(templateId: UInt64, tokenUri: String){
         pre {
             tokenUri.length > 0 : "plese provide new uri"
