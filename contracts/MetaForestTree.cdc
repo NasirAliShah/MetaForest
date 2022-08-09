@@ -28,22 +28,42 @@ pub contract MetaForestTree : NonFungibleToken {
         pub let templateId: UInt64
         pub var maxSupply: UInt64
         pub var issuedSupply: UInt64
-        access(contract) var immutableData: {String: AnyStruct}
+        access(contract)  var baseUri: String
+        access(contract) var tokenUri: String
 
-        init(maxSupply: UInt64, immutableData: {String: AnyStruct}) {
+        init(maxSupply: UInt64, baseUri: String, tokenUri: String) {
             pre {
                 maxSupply > 0 : "MaxSupply must be greater than zero"
-                immutableData != nil: "ImmutableData must not be nil"
-                immutableData.length != 0: "New template data cannot be empty"
+                baseUri.length > 0 : "base Uri shoudl be valid"
+                tokenUri.length > 0: "token Uri shoudl be valid"
             }
             
             self.templateId = MetaForestTree.lastIssuedTemplateId
             self.maxSupply = maxSupply
-            self.immutableData = immutableData
+            self.baseUri = baseUri
+            self.tokenUri = tokenUri
             self.issuedSupply = 0
         }
-        pub fun getImmutableData(): {String:AnyStruct} {
-            return self.immutableData
+
+        access(contract) fun setBaseUri(baseUri: String) {
+            pre {
+                self.baseUri != baseUri : "plese provide new uri"
+            }
+            self.baseUri = baseUri
+        }
+
+        access(contract) fun setTokenUri(tokenUri: String) {
+            pre {
+                self.tokenUri != tokenUri : "plese provide new uri"
+            }
+            self.tokenUri  = tokenUri
+        }
+
+        pub fun getBaseUri(): String {
+            return self.baseUri
+        }
+        pub fun getTokenUri(): String {
+            return self.tokenUri
         }
         // a method to increment issued supply for template
         access(contract) fun incrementIssuedSupply(): UInt64 {
@@ -69,12 +89,14 @@ pub contract MetaForestTree : NonFungibleToken {
     // 
     pub resource NFT: NonFungibleToken.INFT {
         pub let id: UInt64
+        access(contract) var data: NFTData
 
         init(templateId: UInt64, mintNumber: UInt64) {
             MetaForestTree.totalSupply = MetaForestTree.totalSupply + 1
 
             self.id = MetaForestTree.totalSupply
             MetaForestTree.allNFTs[self.id] = NFTData(templateId: templateId, mintNumber: mintNumber)
+            self.data = MetaForestTree.allNFTs[self.id]!
 
             emit NFTMinted(nftId: self.id, templateId: templateId, mintNumber: mintNumber)
         }
@@ -146,8 +168,8 @@ pub contract MetaForestTree : NonFungibleToken {
         }
     }
     //method to create new Template, only access by the verified user
-    access(account) fun createTemplate(maxSupply: UInt64, immutableData: {String: AnyStruct}) {
-        let newTemplate = Template(maxSupply: maxSupply, immutableData: immutableData)
+    access(account) fun createTemplate(maxSupply: UInt64, baseUri: String, tokenUri: String) {
+        let newTemplate = Template(maxSupply: maxSupply, baseUri: baseUri, tokenUri: tokenUri)
         MetaForestTree.allTemplates[MetaForestTree.lastIssuedTemplateId] = newTemplate
         emit TemplateCreated(templateId: MetaForestTree.lastIssuedTemplateId, maxSupply: maxSupply)
         MetaForestTree.lastIssuedTemplateId = MetaForestTree.lastIssuedTemplateId + 1
@@ -166,34 +188,31 @@ pub contract MetaForestTree : NonFungibleToken {
         var newNFT: @NFT <- create NFT(templateId: templateId, mintNumber: MetaForestTree.allTemplates[templateId]!.incrementIssuedSupply())
         recipientCollection.deposit(token: <-newNFT)
     }
-     // Method to Purchase an NFT with Flow Tokens
-    pub fun purchaseNFTWithFlow(templateId: UInt64, recipientAddress: Address, flowPayment: @FungibleToken.Vault) {
-        pre {
-            // flowPayment.balance == MetaForestTree.allTemplates[templateId]!.immutableData.price: "Your vault does not have enough balance to buy this Template!"
-            self.allTemplates.containsKey(templateId): "Template ID must have to be valid"
-            }
-            
-        let adminVaultReceiverRef = getAccount(self.account.address).getCapability(self.AdminFlowTokenReceiver).borrow<&FlowToken.Vault{FungibleToken.Receiver}>()
-                    ?? panic("Could not borrow reference to owner token vault!")
-        adminVaultReceiverRef.deposit(from: <- flowPayment)
-        
-        MetaForestTree.mintNFT(templateId: templateId, account: recipientAddress)
-        }
-
+     
     //method to create empty Collection
     pub fun createEmptyCollection(): @NonFungibleToken.Collection {
         return <- create MetaForestTree.Collection()
     }
     
+    access(account) fun updateBaseUri(templateId: UInt64,baseUri: String){
+        pre {
+            baseUri.length > 0 : "plese provide new uri"
+        }
+        self.allTemplates[templateId]!.setBaseUri(baseUri: baseUri)
+    }
+
+     
+    access(account) fun updateTokenUri(templateId: UInt64, tokenUri: String){
+        pre {
+            tokenUri.length > 0 : "plese provide new uri"
+        }
+        self.allTemplates[templateId]!.setTokenUri(tokenUri: tokenUri)
+    }
+
+
     //method to get all templates
     pub fun getAllTemplates(): {UInt64: Template} {
         return MetaForestTree.allTemplates
-    }
-
-    //method to get the latest template id
-
-    pub fun getLatestTemplateId() : UInt64 {
-        return MetaForestTree.lastIssuedTemplateId - 1
     }
 
     //method to get template by id
