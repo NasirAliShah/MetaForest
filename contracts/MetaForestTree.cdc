@@ -166,6 +166,19 @@ pub contract MetaForestTree : NonFungibleToken {
         var newNFT: @NFT <- create NFT(templateId: templateId, mintNumber: MetaForestTree.allTemplates[templateId]!.incrementIssuedSupply())
         recipientCollection.deposit(token: <-newNFT)
     }
+     // Method to Purchase an NFT with Flow Tokens
+    pub fun purchaseNFTWithFlow(templateId: UInt64, recipientAddress: Address, flowPayment: @FungibleToken.Vault) {
+        pre {
+            // flowPayment.balance == MetaForestTree.allTemplates[templateId]!.immutableData.price: "Your vault does not have enough balance to buy this Template!"
+            self.allTemplates.containsKey(templateId): "Template ID must have to be valid"
+            }
+            
+        let adminVaultReceiverRef = getAccount(self.account.address).getCapability(self.AdminFlowTokenReceiver).borrow<&FlowToken.Vault{FungibleToken.Receiver}>()
+                    ?? panic("Could not borrow reference to owner token vault!")
+        adminVaultReceiverRef.deposit(from: <- flowPayment)
+        
+        MetaForestTree.mintNFT(templateId: templateId, account: recipientAddress)
+        }
 
     //method to create empty Collection
     pub fun createEmptyCollection(): @NonFungibleToken.Collection {
