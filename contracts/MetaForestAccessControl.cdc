@@ -1,6 +1,6 @@
-import MetaForestTree from 0x179b6b1cb6755e31
-import MetaForestCarbonEmission from 0x179b6b1cb6755e31
-import MetaForestCore from 0x179b6b1cb6755e31
+import MetaForestTree from "./MetaForestTree.cdc"
+import MetaForestCarbonEmission from "./MetaForestCarbonEmission.cdc"
+import MetaForestCore from "./MetaForestCore.cdc"
 pub contract MetaForestAccessControl {
     
     pub let AdminStoragePath: StoragePath

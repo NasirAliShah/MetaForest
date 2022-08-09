@@ -1,5 +1,5 @@
-import FungibleToken from 0xee82856bf20e2aa6
-import NonFungibleToken from 0x01cf0e2f2f715450
+import FungibleToken from "./FungibleToken.cdc"
+import NonFungibleToken from "./NonFungibleToken.cdc"
 pub contract MetaForestTree : NonFungibleToken {
     // Events
     pub event ContractInitialized()
@@ -219,7 +219,7 @@ pub contract MetaForestTree : NonFungibleToken {
         return MetaForestTree.allTemplates[templateId]!
     } 
     //method to get nft-data by id
-    pub fun getNFTData(nftId: UInt64): NFTData {
+    pub fun getNFTDataById(nftId: UInt64): NFTData {
         pre {
             MetaForestTree.allNFTs[nftId] != nil: "nft id does not exist"
         }
