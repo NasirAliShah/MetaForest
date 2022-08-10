@@ -1,5 +1,4 @@
-import FungibleToken from "./FungibleToken.cdc"
-import NonFungibleToken from "./NonFungibleToken.cdc"
+import NonFungibleToken from 0x631e88ae7f1d7c20
 pub contract MetaForestTree : NonFungibleToken {
     // Events
     pub event ContractInitialized()
@@ -34,8 +33,8 @@ pub contract MetaForestTree : NonFungibleToken {
         init(maxSupply: UInt64, baseUri: String, tokenUri: String) {
             pre {
                 maxSupply > 0 : "MaxSupply must be greater than zero"
-                baseUri.length > 0 : "base Uri shoudl be valid"
-                tokenUri.length > 0: "token Uri shoudl be valid"
+                baseUri.length > 0 : "base Uri should be valid"
+                tokenUri.length > 0: "token Uri should be valid"
             }
             
             self.templateId = MetaForestTree.lastIssuedTemplateId
@@ -45,20 +44,20 @@ pub contract MetaForestTree : NonFungibleToken {
             self.issuedSupply = 0
         }
 
+        // a method to set new base uri
         access(contract) fun setBaseUri(baseUri: String) {
             pre {
-                self.baseUri != baseUri : "plese provide new uri"
+                self.baseUri != baseUri : "please provide new uri"
             }
             self.baseUri = baseUri
         }
-
+        // a method to set new token uri
         access(contract) fun setTokenUri(tokenUri: String) {
             pre {
                 self.tokenUri != tokenUri : "plese provide new uri"
             }
             self.tokenUri  = tokenUri
         }
-
         pub fun getBaseUri(): String {
             return self.baseUri
         }
@@ -93,11 +92,9 @@ pub contract MetaForestTree : NonFungibleToken {
 
         init(templateId: UInt64, mintNumber: UInt64) {
             MetaForestTree.totalSupply = MetaForestTree.totalSupply + 1
-
             self.id = MetaForestTree.totalSupply
             MetaForestTree.allNFTs[self.id] = NFTData(templateId: templateId, mintNumber: mintNumber)
             self.data = MetaForestTree.allNFTs[self.id]!
-
             emit NFTMinted(nftId: self.id, templateId: templateId, mintNumber: mintNumber)
         }
         destroy(){
@@ -192,15 +189,16 @@ pub contract MetaForestTree : NonFungibleToken {
     pub fun createEmptyCollection(): @NonFungibleToken.Collection {
         return <- create MetaForestTree.Collection()
     }
-    access(account) fun updateBaseUri(templateId: UInt64,baseUri: String){
+    
+    access(account) fun updateBaseUri(templateId: UInt64, baseUri: String){
         pre {
-            baseUri.length > 0 : "plese provide new uri"
+            baseUri.length > 0 : "base Uri should be valid"
         }
         self.allTemplates[templateId]!.setBaseUri(baseUri: baseUri)
     }
     access(account) fun updateTokenUri(templateId: UInt64, tokenUri: String){
         pre {
-            tokenUri.length > 0 : "plese provide new uri"
+            tokenUri.length > 0 : "token Uri should be valid"
         }
         self.allTemplates[templateId]!.setTokenUri(tokenUri: tokenUri)
     }

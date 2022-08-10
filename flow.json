@@ -53,60 +53,19 @@
 		},
 	
 		"MetaForest-testnet": {
-		  "address": "0x4ea480b0fc738e55",
+		  "address": "0x24b11736f820a1c8",
 		  "key": {
 			"type": "hex",
 			"index": 0,
 			"signatureAlgorithm": "ECDSA_secp256k1",
 			"hashAlgorithm": "SHA3_256",
-			"privateKey": "09768fa6818991011106abb95dc444ac1e763f7244a47c35afad726fb3a28f0a"
-		  }
-		},  
-		"MetaForest-User-testnet": {
-		  "address": "0x458eb22930f6f07c",
-		  "key": {
-			"type": "hex",
-			"index": 0,
-			"signatureAlgorithm": "ECDSA_secp256k1",
-			"hashAlgorithm": "SHA3_256",
-			"privateKey": "57367d4a4f274e2356aa4b22dada6c29676388700a9feb8ad0f8a05874562502"
-		  }
-		},
-		"MetaForest-Wallet": {
-		  "address": "0x4fc1c6e3c5e5b4f3",
-		  "key": {
-			"type": "hex",
-			"index": 0,
-			"signatureAlgorithm": "ECDSA_secp256k1",
-			"hashAlgorithm": "SHA3_256",
-			"privateKey": "4867160fc372df8982fffc507e6f4bb24548bb48860a25e5dfb98ad6817889e5"
-		  }
-		},
-		"MetaForest-USDC": {
-		  "address": "0xa33d4223b3818e3f",
-		  "key": {
-			"type": "hex",
-			"index": 0,
-			"signatureAlgorithm": "ECDSA_secp256k1",
-			"hashAlgorithm": "SHA3_256",
-			"privateKey": "5af9735deb0388208105fe8975204ad36bbec9151101a8e6ceaf3a2e89ecf22f"
-		  }
-		},
-		"MetaForest-USDC-1": {
-		  "address": "0xf33e541cb9446d81",
-		  "key": {
-			"type": "hex",
-			"index": 0,
-			"signatureAlgorithm": "ECDSA_secp256k1",
-			"hashAlgorithm": "SHA3_256",
-			"privateKey": "8946a86486ea32cda69d417748b1fcef0d1e641bd301743da78793284970d77e"
+			"privateKey": "9e1b80e5bcb31725223e2db5c4dc5333305240d7a3dde7a83dfcef9354e005e0"
 		  }
 		}
 	},
 	"deployments": {
-		"emulator": {
-			"MetaForest-User": ["NonFungibleToken"],
-			"MetaForest-User1":["CET"]
+		"testnet": {
+			"MetaForest-testnet": ["CET","MetaForestCarbonEmission","MetaForestTree","MetaForestCore","MetaForestAccessControl"]
 		  }
 	}
 }

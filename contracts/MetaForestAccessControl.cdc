@@ -1,27 +1,25 @@
-import MetaForestTree from "./MetaForestTree.cdc"
-import MetaForestCarbonEmission from "./MetaForestCarbonEmission.cdc"
-import MetaForestCore from "./MetaForestCore.cdc"
+import MetaForestTree from 0x24b11736f820a1c8
+import MetaForestCarbonEmission from 0x24b11736f820a1c8
 pub contract MetaForestAccessControl {
     
     pub let AdminStoragePath: StoragePath
 
     pub resource Admin {
 
-        pub fun createTemplate(maxSupply: UInt64, immutableData: {String:AnyStruct}){
-            MetaForestTree.createTemplate(maxSupply:maxSupply, immutableData: immutableData)
+        pub fun createTemplate(maxSupply: UInt64, baseUri: String, tokenUri: String){
+            MetaForestTree.createTemplate(maxSupply:maxSupply,baseUri:baseUri, tokenUri: tokenUri)
         }
-
-        pub fun increaseMetaForestCarbonEmissions(user: Address, amount:UInt8){
+        pub fun increaseMetaForestCarbonEmissions(user: Address, amount: UFix64){
             MetaForestCarbonEmission.increaseMetaForestCarbonEmissions(user:user, amount: amount)
         }
         pub fun mintNFT(templateId:UInt64, receiptAccount:Address){
             MetaForestTree.mintNFT(templateId:templateId, account:receiptAccount)
         }
-        pub fun watering(tokenId: UInt64, wateringAmount: UInt64){
-            MetaForestCore.watering(tokenId:tokenId, wateringAmount: wateringAmount)
+        pub fun updateBaseUri(templateId: UInt64, baseUri: String){
+            MetaForestTree.updateBaseUri(templateId: templateId, baseUri: baseUri)
         }
-        pub fun attack(account: Address, tokenId:UInt64, amount: UInt64){
-            MetaForestCore.attack(account:account, tokenId:tokenId, amount:amount)
+        pub fun updateTokenUri(templateId: UInt64, tokenUri: String){
+            MetaForestTree.updateTokenUri(templateId: templateId, tokenUri: tokenUri)
         }
         
     }

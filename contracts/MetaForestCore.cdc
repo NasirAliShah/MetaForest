@@ -1,28 +1,37 @@
-import MetaForestAccessControl from "./MetaForestAccessControl.cdc"
-import MetaForestTree from "./MetaForestTree.cdc"
-import MetaForestCarbonEmission from "./MetaForestCarbonEmission.cdc"
-import CET from "./CET.cdc"
-import FungibleToken from "./FungibleToken.cdc"
+import MetaForestTree from 0x24b11736f820a1c8
+import MetaForestCarbonEmission from 0x24b11736f820a1c8
+import CET from 0x24b11736f820a1c8
+import FungibleToken from 0x9a0766d93b6608b7
 
 pub contract MetaForestCore {
     
+    // A dictionary that shows a user freeList nft, a user can only get one free nft.
     access(self) var freeList : {Address:Bool}
-    access(self) var growth : {UInt64:UInt64}
+    // A dictionary that shows the growth of a token id.
+    access(self) var growth : {UInt64:UFix64}
+    // A dictionary that shows the healthiness of a token id.
     access(self) var unHealthy : {UInt64:UFix64}
+    // A dictionary that shows the last attack against a user on a specific nft.
     access(self) var lastAttack : {Address:UFix64}
-
+    // A dictionary that shows a token id against it's URI
     access(contract) var tokenURI: {UInt64: String}
+    // A variable that stores the URI count.
     access(contract) var tokenURICount: UInt64
+
+    //----------------------------------------------------
+    //          MetaForestCore contract level definitions
+    //----------------------------------------------------
 
     pub event Attack(account: Address, tokenId: UInt64, amount:UFix64)
     pub event Watering(account: Address, tokenId: UInt64, wateringAmount:UFix64)
-    pub event NFTPurchased(account: Address, templateId: UInt64)
+    pub event FreeNFTPurchased(account: Address, templateId: UInt64)
+    pub event NFTPurchasedWithFlow(account: Address, templateId: UInt64)
 
 
     pub resource interface CorePublic{ 
         pub fun watering(tokenId: UInt64, wateringAmount: UFix64, userAddress: Address, CET: @FungibleToken.Vault)
         pub fun attack(nftAccount: Address, tokenId:UInt64, attackAmount: UFix64, CET: @FungibleToken.Vault)
-        pub fun purchaseNFTWithFlow(templateId: UInt64, recipientAddress: Address, flowPayment: @FungibleToken.Vault)
+        pub fun purchaseNFTWithFlow(templateId: UInt64, recipientAddress: Address, price: UFix64, flowPayment: @FungibleToken.Vault)
         pub fun purchaseNFTFree(templateId: UInt64, recipientAddress: Address)
     }
 
@@ -31,12 +40,10 @@ pub contract MetaForestCore {
         pub fun watering(tokenId: UInt64, wateringAmount: UFix64, userAddress: Address, CET: @FungibleToken.Vault){
             pre {
                 tokenId != 0: "token id should be valid"
-                wateringAmount > UFix64(0.0): "wateringAmount id should be valid"
+                wateringAmount > UFix64(0.0): "wateringAmount should be valid"
                 userAddress != nil: "userAddress should be valid"
                 wateringAmount >= CET.balance :  "watering amount should be equal or greater than CET balance"
             }
-            // get user nft get template id from data and then update token uri of user template
-            //get refrence 
             let account = getAccount(userAddress)
             let acct1Capability = account.getCapability(MetaForestTree.CollectionPublicPath)
                                                 .borrow<&{MetaForestTree.MetaForestTreeCollectionPublic}>()
@@ -48,13 +55,13 @@ pub contract MetaForestCore {
             let templateTd = nftData.templateId
             
             if(wateringAmount <= 10.0) {
-                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[1])
+                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[1]!)
             }else if(wateringAmount <= 20.0) {
-                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[2])
+                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[2]!)
             }else if(wateringAmount <= 30.0) {
-                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[3])
+                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[3]!)
             }else {
-                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[4])
+                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[4]!)
             }
             
             // check the healthy and unhealthy amount 
@@ -62,23 +69,22 @@ pub contract MetaForestCore {
                 MetaForestCore.unHealthy[tokenId] =  MetaForestCore.unHealthy[tokenId]! - wateringAmount
             }else {
                 MetaForestCore.growth[tokenId] = MetaForestCore.growth[tokenId]! + wateringAmount - MetaForestCore.unHealthy[tokenId]!
-                MetaForestCore.unHealthy[tokenId] = 0
+                MetaForestCore.unHealthy[tokenId] = 0.0
             }
-            destroy  CET
-
             // withdraw and burn CET Token
-            emit Watering(account:userAddress , tokenId: tokenId, wateringAmount:wateringAmount)
+            destroy  CET
+            emit Watering(account:userAddress, tokenId: tokenId, wateringAmount: wateringAmount)
         }
+
         pub fun attack(nftAccount: Address, tokenId:UInt64, attackAmount: UFix64, CET: @FungibleToken.Vault){
             pre {
                 tokenId != 0: "token id should be valid"
-                attackAmount >= 20.0 : "attackAmount id should be valid"
+                attackAmount >= 20.0 : "attackAmount should be greater than or equal to 20"
                 nftAccount != nil: "userAddress should be valid"
                 attackAmount >= CET.balance : "attack amount should be equal or greater than CET balance"
                 }
-            // get user nft get template id from data and then update token uri of user template
-            //get refrence 
-                let account = getAccount(nftAccount)
+            
+            let account = getAccount(nftAccount)
             let acct1Capability = account.getCapability(MetaForestTree.CollectionPublicPath)
                                     .borrow<&{MetaForestTree.MetaForestTreeCollectionPublic}>()
                                     ?? panic("Could not get receiver reference to the NFT Collection")
@@ -87,15 +93,14 @@ pub contract MetaForestCore {
 
             var nftData = MetaForestTree.getNFTDataById(nftId: tokenId)
             let templateTd = nftData.templateId
-            //token greate then 20
+            //token greate than 20
             if(attackAmount == 20.0) {
-                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[2-1])
+                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[2-1]!)
             }else if(attackAmount == 30.0) {
-                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[3-1])
+                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[3-1]!)
             }else {
-                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[4-1])
+                MetaForestTree.updateTokenUri(templateId: templateTd, tokenUri: MetaForestCore.tokenURI[4-1]!)
             }
-            
 
             MetaForestCore.unHealthy[tokenId] = MetaForestCore.unHealthy[tokenId]! + attackAmount
             MetaForestCore.lastAttack[nftAccount] = getCurrentBlock().timestamp
@@ -106,20 +111,23 @@ pub contract MetaForestCore {
         }
 
         // Method to Purchase an NFT with Flow Tokens
-        pub fun purchaseNFTWithFlow(templateId: UInt64, recipientAddress: Address, flowPayment: @FungibleToken.Vault) {
+        pub fun purchaseNFTWithFlow(templateId: UInt64, recipientAddress: Address, price: UFix64, flowPayment: @FungibleToken.Vault) {
             pre {
                 templateId != 0: "template it must not be zero"
                 recipientAddress != nil: "recript address must not be null"
+                price > 0.0: "Price should be greater than zero"
+                flowPayment.balance == price: "Your vault does not have balance to buy NF"
             }
             
-            let adminVaultReceiverRef = getAccount(self.account.address).getCapability(/public/CETReceiver)
-                                        .borrow<&CET.Vault{FungibleToken.Receiver}>()
-                                        ?? panic("Could not borrow reference to owner token vault!")
+            let adminVaultReceiverRef = getAccount(self.owner!.address)
+                                                    .getCapability(/public/CETReceiver)
+                                                    .borrow<&CET.Vault{FungibleToken.Receiver}>()
+                                                    ?? panic("Could not borrow reference to owner token vault!")
             adminVaultReceiverRef.deposit(from: <- flowPayment)
             
             MetaForestTree.mintNFT(templateId: templateId, account: recipientAddress)
 
-            emit NFTPurchased(account: recipientAddress, templateId: templateId)
+            emit NFTPurchasedWithFlow(account: recipientAddress, templateId: templateId)
         }
         
         pub fun purchaseNFTFree(templateId: UInt64, recipientAddress: Address) {
@@ -131,9 +139,9 @@ pub contract MetaForestCore {
             MetaForestTree.mintNFT(templateId: templateId, account: recipientAddress)
             MetaForestCore.freeList[recipientAddress] = true
 
-            emit NFTPurchased(account: recipientAddress, templateId: templateId)
+            emit FreeNFTPurchased(account: recipientAddress, templateId: templateId)
         }
-
+        // only admin can call this function
         pub fun setTokenUriData(tokenUri: String){
             pre {
                 tokenUri.length > 0: "token uri should be valid"
@@ -141,12 +149,10 @@ pub contract MetaForestCore {
 
             MetaForestCore.tokenURI[MetaForestCore.tokenURICount] = tokenUri
             MetaForestCore.tokenURICount = MetaForestCore.tokenURICount + 1
-
-            
         }
-
     }
-    pub fun getGrowthAmount(tokenId:UInt64): UInt64{
+
+    pub fun getGrowthAmount(tokenId:UInt64): UFix64{
         pre {
             tokenId != 0:"token id must not be null"
         }
